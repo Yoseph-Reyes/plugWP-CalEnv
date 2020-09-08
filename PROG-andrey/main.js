@@ -79,6 +79,10 @@ $form.addEventListener('submit', (event)=>{
   const $form_city  = $formLlenado.get('form_city')
   const $form_country  = $formLlenado.get('form_country')
   const $form_state  = $formLlenado.get('form_state')
+  const $form_weight  = $formLlenado.get('form_weight')
+  const $form_length  = $formLlenado.get('form_length')
+  const $form_height  = $formLlenado.get('form_height')
+  const $form_width  = $formLlenado.get('form_width')
  
  
 

@@ -18,46 +18,98 @@ define('cenvRuta',plugin_dir_path(__FILE__));
 // If this file is called directly, abort. //
 if ( ! defined( 'WPINC' ) ) {die;} // end if
 
+/**
+ * Check if WooCommerce is active
+ **/
+if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+
+    add_action( 'woocommerce_after_order_notes',cenvtextsender());
+
+    function initcheck() { //FUNCION PARA inicializar todo
+        
+        if(! class_exists('opSend')){
+            class opSend extends WC_Shipping_Method{
+
+                public function __construct() {
+                    $this->id = 'cenv';
+
+                    //PAISES
+                    $this->countries = array(
+                        'US',//estados unidos
+                        'CA'//canada
+                    );
+                    $this-> init();
+                }
+                function init(){
+                    $this-> formFields();
+                }
+                function formFields(){
+                    echo '<div id="additional_checkout_field"><h2>' . __('Información para envios') . '</h2>';
+                
+                //INPUT DIRECCION
+                woocommerce_form_field( 'dirr', array(
+                    'type'          => 'text',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('Street Adress'),
+                    'placeholder'   => __('Example'),
+                    ), $checkout->get_value( 'dirr' ));
+                
+                    //INPUT ESTADO
+                woocommerce_form_field( 'state', array(
+                    'type'          => 'state',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('State'),        
+                    ), $checkout->get_value( 'state' ));
+            
+                //INPUT PAIS
+                woocommerce_form_field( 'country', array(
+                    'type'          => 'contry',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('State'),        
+                    ), $checkout->get_value( 'country' ));
+                    
+                    //INPUT CODIGO POSTAL
+                woocommerce_form_field( 'zip', array(
+                    'type'          => 'text',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('Postal Code'),
+                    'placeholder'   => __('20202'),
+                    ), $checkout->get_value( 'zip' ));
+
+                    //PESO
+                woocommerce_form_field( 'weigth', array(
+                    'type'          => 'number',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('Peso'),
+                    'placeholder'   => __('10.0 KG'),
+                    ), $checkout->get_value( 'weigth' ));
+                /*woocommerce_form_field( 'zip', array(
+                    'type'          => 'text',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('Postal Code'),
+                    'placeholder'   => __('20202'),
+                    ), $checkout->get_value( 'zip' ));
+                woocommerce_form_field( 'zip', array(
+                    'type'          => 'text',
+                    'class'         => array('my-field-class form-row-wide'),
+                    'label'         => __('Postal Code'),
+                    'placeholder'   => __('20202'),
+                    ), $checkout->get_value( 'zip' ));*/    
+                        
+                    
+                    echo '</div>';  
+                }
+            }               
+                 
+            }
+        }
+    }
+        
+
+
 // Let's Initialize Everything
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 require_once( plugin_dir_path( __FILE__ ) . 'core-init.php' );
 }
 
 
-function cenvtextsender( $checkout ) { //FUNCION PARA AÑADIR EL FORMULARIO
- 
-    echo '<div id="additional_checkout_field"><h2>' . __('Información para envios') . '</h2>';
-    
-    //INPUT DIRECCION
-    woocommerce_form_field( 'dirr', array(
-        'type'          => 'text',
-        'class'         => array('my-field-class form-row-wide'),
-        'label'         => __('Street Adress'),
-        'placeholder'   => __('Example'),
-        ), $checkout->get_value( 'dirr' ));
-    
-        //INPUT ESTADO
-    woocommerce_form_field( 'state', array(
-        'type'          => 'state',
-        'class'         => array('my-field-class form-row-wide'),
-        'label'         => __('State'),        
-        ), $checkout->get_value( 'state' ));
-
-    //INPUT PAIS
-    woocommerce_form_field( 'country', array(
-        'type'          => 'contry',
-        'class'         => array('my-field-class form-row-wide'),
-        'label'         => __('State'),        
-        ), $checkout->get_value( 'country' ));
-        
-        //INPUT CODIGO POSTAL
-    woocommerce_form_field( 'zip', array(
-        'type'          => 'text',
-        'class'         => array('my-field-class form-row-wide'),
-        'label'         => __('Postal Code'),
-        'placeholder'   => __('20202'),
-        ), $checkout->get_value( 'zip' ));    
-        
-        echo '</div>';
-    }
-    add_action( 'woocommerce_after_order_notes',cenvtextsender());

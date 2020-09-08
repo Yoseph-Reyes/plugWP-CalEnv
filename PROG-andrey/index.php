@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="formContainer">
-        <form action="form.php" class="formGetAdress" id="form" method="post">
+        <form action="" class="formGetAdress" id="form" method="post">
             <label for="">ZIPCODE:</label>
             <input type="text" name="form_zipcode"><br>
             <label for="">CITY:</label>
@@ -16,13 +16,13 @@
             <label for="">State:</label>
             <input type="text" name="form_state"><br>
             <label for="">Weight:</label>
-            <input type="number" name="form_weight"><br>
+            <input type="number" step="0.01" name="form_weight"><br>
             <label for="">height:</label>
-            <input type="number" name="form_height"><br>
+            <input type="number" step="0.01" name="form_height"><br>
             <label for="">width:</label>
-            <input type="number" name="form_width"><br>
+            <input type="number" step="0.01" name="form_width"><br>
             <label for="">length:</label>
-            <input type="number" name="form_length"><br>
+            <input type="number" step="0.01" name="form_length"><br>
 
                
             <label for="">COUNTRY:</label>
