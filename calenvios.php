@@ -18,83 +18,174 @@ define('cenvRuta',plugin_dir_path(__FILE__));
 // If this file is called directly, abort. //
 if ( ! defined( 'WPINC' ) ) {die;} // end if
 
-/**
- * Check if WooCommerce is active
- **/
-if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {    
+if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+	 function cloudways_shipping_method()
+	 {
+	 if (!class_exists('cloudways_Shipping_Method')) {
+	 class cloudways_Shipping_Method extends WC_Shipping_Method
+	 {
+	 public function __construct()
+	 {
+	 $this->id = 'cloudways';
+	 $this->method_title = __('Shipping Calculator', 'cenv');
+	 $this->method_description = __('Custom Shipping Method for cloudwayscalculator', 'cenv');
+	 // Contreis availability
+	 $this->availability = 'including';
+	 $this->countries = array(	 
+	 'CA',
+	 'US',
+	 );
+	 $this->init();
+	 $this->enabled = isset($this->settings['enabled']) ? $this->settings['enabled'] : 'yes';
+	 $this->title = isset($this->settings['title']) ? $this->settings['title'] : __('Shipping Calculator', 'cenv');
+	 }
+	 /**
+	 Load the settings API
+	 */
+	 function init()
+	 {
+	 $this->init_form_fields();
+	 $this->init_settings();
+	 add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
+	 }
+	 function init_form_fields()
+	 {
+	 $this->form_fields = array(
+	 'enabled' => array(
+	 'title' => __('Enable', 'cenv'),
+	 'type' => 'checkbox',
+	 'default' => 'yes'
+	 ),
+	 'weight' => array(//PESO
+	 'title' => __('Weight (kg)', 'cenv'),
+	 'type' => 'number',
+	 'default' => 2268
+	 ),
+	'height' => array(//ALTURA
+	 'title' => __('Height (in)', 'cenv'),
+	 'type' => 'number',
+	 'default' => 103
+	 ),
+	'width' => array(
+	 'title' => __('Width (in)', 'cenv'),
+	 'type' => 'number',
+	 'default' => 92
+	 ),
+	'length' => array(
+	 'title' => __('Length (in)', 'cenv'),
+	 'type' => 'number',
+	 'default' => 342
+	 ),		 
+	 'title' => array(
+	 'title' => __('Title', 'cenv'),
+	 'type' => 'text',
+	 'default' => __('Shipping Calculator', 'cenv')
+	 ),
+	 );
+	 }
+	 public function cloudways_shipping_calculation($package)
+	 {
+	 $weight = 0;
+	 $heigth = 0;
+	 $widht = 0;
+	 $lenght = 0;	 
+	 $cost = 0;
+	 $country = $package["destination"]["country"];
+	 foreach ($package['contents'] as $item_id => $values) {
+	 $_product = $values['data'];
+	 $weight = $weight + $_product->get_weight() * $values['quantity'];
+     $height = $height +$_product->get_height() * $values['quantity'];//ALTURA Max value is 103 inches.
+     $width = $width +$_product->get_width() * $values['quantity'];//ANCHO Max value is 92 inches
+     $length = $length +$_product->get_length() * $values['quantity'];//LARGO Max value is 324 inches
+	 }
+		 
+		 //FECHA DE ENVIO
+		 $date_act = date("d-m-Y");
+		 $datep1 = date("d-m-Y",strtotime($date_act."+ 1 days"));
+		 
+		 $json_array = array(
+	'login' => array
+		('username' => "storagecanopy",
+		'password' => "yrc1234",
+		'busId' => "78026298937",
+		'busRole' => "Shipper",
+		'paymentTerms' => "Prepaid"),
+ 	'details' => array(
+		'serviceClass' => "ALL",
+		'typeQuery' => "MATRX",
+		'pickupDate' => $datep1,
+		'productCode' => "DFQ",
+		'acceptTerms' => true),
+	'originLocation' => array(
+		'city' => "Venus",
+      	'state' => "FL",
+      	'postalCode' => "33960",
+      	'country' => "USA",
+		'locationType' => "COMM"),
+	'destinationLocation' => array(
+		'city' => $ciudad,
+		'state' => $region,
+		'postalCode' => $zip,  
+		'country' => $pais,
+		'locationType' => "COMM"),
+	'listOfCommodities' => array(
+		'hazmatInd' => false,
+		'poisonInd' => false,
+		'commodity' => array( 		
+		  'handlingUnits' => 1,
+		  'packageCode' => "SKD",
+		  'packageLength' => $length,
+		  'packageWidth' => $width,
+		  'packageHeight' => $height,
+		  'weight' => $weight
+		)
+	)	  	  
+);
 
-    function initcheck() { //FUNCION PARA inicializar todo
-        
-        if(! class_exists('opSend')){
-            class opSend extends WC_Shipping_Method{
-
-                public function __construct() {
-                    $this->id                    = 'cenv';
-                    $this->method_title          = __( 'Shipping Calculator','cenv' );
-		            $this->method_description    = __( 'A shipping method to calculate send cost','cenv' );
-                    //PAISES
-                    $this->countries = array(
-                        'US',//estados unidos
-                        'CA'//canada
-                    );
-                    $this->enabled		        = $this->get_option( 'enabled' );
-                    $this->title                = $this->get_option( 'title','cenv' );
-                    $this-> init();
-
-                    function init(){
-                        $this-> formFields();
-                        $this->init_settings(); 
-                        add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
-                    }
-		
-                   function formsFields(){
-                        $this->instance_form_fields = array(
-                            'enabled' => array(
-                                'title' 		=> __( 'Enable/Disable','cenv' ),
-                                'type' 			=> 'checkbox',
-                                'label' 		=> __( 'Enable this Shipping Method' ),
-                                'default' 		=> 'yes',
-                            ),
-                            'title' => array(
-                                'title' 		=> __( 'Title','cenv' ),
-                                'type' 			=> 'text',
-                                'description' 	=> __( 'Title to be display on site', 'cenv' ),
-                                'default'		=> __( 'Shipping Calculator','cenv' ),
-                            ),
-                            'weight' => array(
-                                'title' => __( 'Weight (kg)', 'cenv' ),
-                                  'type' => 'number',
-                                  'description' => __( 'Maximum allowed weight', 'cenv' ),
-                                  'default' => 100
-                                  ),
-                        );
-                   }
-                                        
-                }
-                
-            }               
-                 
-        }
-        
-    }
-        add_action( 'woocommerce_shipping_init', 'opSend' );
-
-        //ANADIR METODO DE ENVIO
-        function addCenvMeth( $methods ) {
-            $methods[] = 'opSend';
-            return $methods;
-        }
-        add_filter('woocommerce_shipping_methods','addCenvMeth');
-
-        // Let's Initialize Everything
-        if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
-            require_once( plugin_dir_path( __FILE__ ) . 'core-init.php' );
-        }
-    }    
-
-        
-
-
-
-
-
+	 $rate = array(
+	 'id' => $this->id,
+	 'label' => $this->title,
+	 'cost' => $cost
+	 );
+	 $this->add_rate($rate);
+	 }
+	 }
+	 }
+	 }
+	 add_action('woocommerce_shipping_init', 'cloudways_shipping_method');
+	 function add_cloudways_shipping_method($methods)
+	 {
+	 $methods[] = 'cloudways_Shipping_Method';
+	 return $methods;
+	 }
+	 add_filter('woocommerce_shipping_methods', 'add_cloudways_shipping_method');
+	 function cloudways_validate_order($posted)
+	 {
+	 $packages = WC()->shipping->get_packages();
+	 $chosen_methods = WC()->session->get('chosen_shipping_methods');
+	 if (is_array($chosen_methods) && in_array('cloudways', $chosen_methods)) {
+	 foreach ($packages as $i => $package) {
+	 if ($chosen_methods[$i] != "cloudways") {
+	 continue;
+	 }
+	 $cloudways_Shipping_Method = new cloudways_Shipping_Method();
+	 $weightLimit = (int)$cloudways_Shipping_Method->settings['weight'];
+	 $weight = 0;
+	 foreach ($package['contents'] as $item_id => $values) {
+	 $_product = $values['data'];
+	 $weight = $weight + $_product->get_weight() * $values['quantity'];
+	 }
+	 $weight = wc_get_weight($weight, 'kg');
+	 if ($weight > $weightLimit) {
+	 $message = sprintf(__('OOPS, %d kg increase the maximum weight of %d kg for %s', 'cloudways'), $weight, $weightLimit, $cloudways_Shipping_Method->title);
+	 $messageType = "error";
+	 if (!wc_has_notice($message, $messageType)) {
+	 wc_add_notice($message, $messageType);
+	 }
+	 }
+	 }
+	 }
+	 }
+	 add_action('woocommerce_review_order_before_cart_contents', 'cloudways_validate_order', 10);
+	 add_action('woocommerce_after_checkout_validation', 'cloudways_validate_order', 10);
+}
